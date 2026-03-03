@@ -118,6 +118,37 @@ App base URL: `http://localhost:3000/api`
 
 Swagger docs: `http://localhost:3000/api/docs`
 
+## Cloud Run Deploy
+
+Two helper scripts are included:
+
+- `scripts/deploy-cloud-run.sh` (bash)
+- `scripts/deploy-cloud-run.ps1` (PowerShell)
+
+PowerShell example:
+
+```powershell
+.\scripts\deploy-cloud-run.ps1 `
+  -ProjectId "my-gcp-project" `
+  -DatabaseUrl "postgresql://USER:PASS@HOST/DB?sslmode=require" `
+  -JwtSecret "replace-with-a-long-secret"
+```
+
+Bash example:
+
+```bash
+PROJECT_ID="my-gcp-project" \
+DATABASE_URL="postgresql://USER:PASS@HOST/DB?sslmode=require" \
+JWT_SECRET="replace-with-a-long-secret" \
+./scripts/deploy-cloud-run.sh
+```
+
+Both scripts:
+
+- enable required Google APIs
+- create or update `DATABASE_URL` and `JWT_SECRET` in Secret Manager
+- deploy Cloud Run with low-cost defaults (`min-instances=0`, `max-instances=3`)
+
 ## API Endpoints
 
 ### Auth
