@@ -15,6 +15,7 @@ The API lets authenticated users upload spreadsheet files that are processed asy
 - Smart flexible ingestion (header detection, normalization, canonical mapping and fallback mode)
 - Row-level result persistence (`SUCCESS`, `FAILED`, `WARNING`)
 - Job retries with attempt history
+- Structured JSON request logs with `x-request-id` trace propagation and latency metrics
 - Swagger/OpenAPI docs at `/api/docs`
 - Global request validation and structured error responses
 - Helmet + throttling
@@ -179,6 +180,26 @@ Both scripts:
 - `GET /api/jobs/:id/results`
 - `POST /api/jobs/:id/retry` (admin only)
 - `GET /api/jobs/:id/download-summary`
+
+## Observability (PR1)
+
+- Every HTTP request receives/propagates `x-request-id`.
+- Request logs are emitted as structured JSON (`event=http_request`) with:
+  - `requestId`
+  - `method`, `path`, `statusCode`
+  - `latencyMs`
+  - `userId` (when authenticated)
+- Unhandled and HTTP exceptions are logged as structured JSON (`event=http_exception`) and include `requestId` in the error response body for traceability.
+
+Cloud Logging quick queries:
+
+```bash
+gcloud logging read 'resource.type="cloud_run_revision" AND resource.labels.service_name="pulsejobs-api" AND jsonPayload.event="http_request"' --limit=20
+```
+
+```bash
+gcloud logging read 'resource.type="cloud_run_revision" AND resource.labels.service_name="pulsejobs-api" AND jsonPayload.event="http_exception"' --limit=20
+```
 
 ## Flexible Ingestion Strategy
 
