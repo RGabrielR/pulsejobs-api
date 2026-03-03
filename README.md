@@ -147,7 +147,13 @@ Both scripts:
 
 - enable required Google APIs
 - create or update `DATABASE_URL` and `JWT_SECRET` in Secret Manager
-- deploy Cloud Run with low-cost defaults (`min-instances=0`, `max-instances=3`)
+- deploy Cloud Run with cost-minimized defaults:
+  - `min-instances=0`
+  - `max-instances=1`
+  - `memory=512Mi`
+  - `concurrency=80`
+  - CPU throttling enabled and startup CPU boost disabled
+  - Dockerfile-based image build (`--clear-base-image`) for stable runtime behavior
 
 ## API Endpoints
 
