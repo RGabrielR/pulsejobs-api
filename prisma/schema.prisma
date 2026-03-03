@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum JobType {
+  CSV_IMPORT
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  PARTIALLY_COMPLETED
+}
+
+enum JobAttemptStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+  PARTIALLY_COMPLETED
+}
+
+enum JobResultStatus {
+  SUCCESS
+  FAILED
+  WARNING
+}
+
+enum ParserMode {
+  CANONICAL
+  FLEXIBLE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  uploads      Upload[]
+  jobs         Job[]
+}
+
+model Upload {
+  id               String   @id @default(cuid())
+  originalFileName String
+  mimeType         String
+  size             Int
+  storagePath      String
+  createdAt        DateTime @default(now())
+  uploadedById     String
+  uploadedBy       User     @relation(fields: [uploadedById], references: [id])
+  jobs             Job[]
+
+  @@index([uploadedById, createdAt])
+}
+
+model Job {
+  id            String   @id @default(cuid())
+  type          JobType
+  status        JobStatus @default(PENDING)
+  uploadedById  String
+  uploadId      String
+  totalRows     Int       @default(0)
+  processedRows Int       @default(0)
+  failedRows    Int       @default(0)
+  warningRows   Int       @default(0)
+  parserMode    ParserMode?
+  headerRowIndex Int?
+  detectedSheetName String?
+  detectedHeaders Json?
+  normalizedHeaders Json?
+  mappingSummary Json?
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  lastError     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  uploadedBy    User      @relation(fields: [uploadedById], references: [id])
+  upload        Upload    @relation(fields: [uploadId], references: [id])
+  attempts      JobAttempt[]
+  resultItems   JobResultItem[]
+
+  @@index([uploadedById, createdAt])
+  @@index([status])
+}
+
+model JobAttempt {
+  id            String           @id @default(cuid())
+  jobId         String
+  attemptNumber Int
+  status        JobAttemptStatus
+  startedAt     DateTime         @default(now())
+  finishedAt    DateTime?
+  errorMessage  String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  job           Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, attemptNumber])
+  @@index([jobId, startedAt])
+}
+
+model JobResultItem {
+  id             String          @id @default(cuid())
+  jobId          String
+  rowNumber      Int
+  status         JobResultStatus
+  message        String
+  rawData        Json
+  normalizedData Json?
+  warnings       Json?
+  createdAt      DateTime        @default(now())
+  job            Job             @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, rowNumber])
+  @@index([jobId, status])
+}

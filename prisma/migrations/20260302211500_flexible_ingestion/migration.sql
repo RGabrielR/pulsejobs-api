@@ -1,0 +1,23 @@
+-- AlterEnum
+ALTER TYPE "JobResultStatus" ADD VALUE IF NOT EXISTS 'WARNING';
+
+-- CreateEnum
+DO $$ BEGIN
+  CREATE TYPE "ParserMode" AS ENUM ('CANONICAL', 'FLEXIBLE');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+-- AlterTable
+ALTER TABLE "Job"
+ADD COLUMN IF NOT EXISTS "warningRows" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS "parserMode" "ParserMode",
+ADD COLUMN IF NOT EXISTS "headerRowIndex" INTEGER,
+ADD COLUMN IF NOT EXISTS "detectedSheetName" TEXT,
+ADD COLUMN IF NOT EXISTS "detectedHeaders" JSONB,
+ADD COLUMN IF NOT EXISTS "normalizedHeaders" JSONB,
+ADD COLUMN IF NOT EXISTS "mappingSummary" JSONB;
+
+-- AlterTable
+ALTER TABLE "JobResultItem"
+ADD COLUMN IF NOT EXISTS "warnings" JSONB;
